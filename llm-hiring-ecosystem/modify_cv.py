@@ -73,7 +73,7 @@ class AnthropicClient:
        #Initialize API client with api keys & model: also stores information about tailoring resume prompt for this run of the program.
 
         self.client = Anthropic(api_key=input_api_key)
-        self.model = model if model else "claude-3-sonnet-20240229"
+        self.model = model if model else "claude-sonnet-4-5-20250929" # Old outdated model "claude-3-sonnet-20240229" 
         self.prompt_template_path = prompt_template_path
         self.prompt_template = prompt_template
         self.prompt_job_description_filename = prompt_job_desc_filename if prompt_job_desc_filename else ''
@@ -142,6 +142,7 @@ class AnthropicClient:
                         else:
                             # Request can be retried directly
                             print(f"Server error {result.custom_id}")
+                            print(f"Error details: {dict(result.result)}")
                     case "expired":
                         print(f"Request expired {result.custom_id}")
                 output_resumes.append("not_succeeded")

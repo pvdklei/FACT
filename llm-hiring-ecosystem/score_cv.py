@@ -143,7 +143,7 @@ if __name__ == "__main__":
     output_df_list = []
     for resume_path in resumes:
         print(resume_path)
-        input_csv = pd.read_csv(str(resume_path), index_col='id')
+        input_csv = pd.read_csv(str(resume_path), index_col=0)
         output_df = return_scores(cv_s_dataframe=input_csv,
                                       job_name=input_job_name,
                                       job_description=input_job_desc)

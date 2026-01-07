@@ -1,1 +1,7 @@
 **/.DS_Store
+**/__pycache__
+**/api_keys.yaml
+**/llm_api_keys.yaml
+**/example_output_data
+**/local_model
+
