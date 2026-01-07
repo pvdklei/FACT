@@ -1,0 +1,189 @@
+schema: '2.0'
+stages:
+  candidate_prepare:
+    cmd: python steps/1_preparation/candidates_preparation.py data/djinni data/prepared_candidates
+    deps:
+    - path: data/djinni
+      hash: md5
+      md5: 4daa4d1e04ca0e1cd2747e3a4798bdd0.dir
+      size: 1276095837
+      nfiles: 5
+    - path: steps/1_preparation/
+      hash: md5
+      md5: cfe571258ebf19b4a9d330f05795a97a.dir
+      size: 56565
+      nfiles: 15
+    - path: steps/1_preparation/candidates_preparation.py
+      hash: md5
+      md5: 4b7fda1a4640b9f0644ba8341c06e62b
+      size: 1299
+    params:
+      params.yaml:
+        candidate_prepare.input_file: candidates.csv
+        candidate_prepare.output_file: candidates_prepared.csv
+    outs:
+    - path: data/prepared_candidates
+      hash: md5
+      md5: 4408cdb5a8027187898640443ae4b496.dir
+      size: 972830706
+      nfiles: 2
+  job_prepare:
+    cmd: python steps/1_preparation/jobs_preparation.py data/djinni data/prepared_jobs
+    deps:
+    - path: data/djinni
+      hash: md5
+      md5: 4daa4d1e04ca0e1cd2747e3a4798bdd0.dir
+      size: 1276095837
+      nfiles: 5
+    - path: steps/1_preparation/
+      hash: md5
+      md5: cfe571258ebf19b4a9d330f05795a97a.dir
+      size: 56565
+      nfiles: 15
+    - path: steps/1_preparation/jobs_preparation.py
+      hash: md5
+      md5: 904d9041b49bc12aae028a21f6b26262
+      size: 1233
+    params:
+      params.yaml:
+        job_prepare.input_file: jobs.csv
+        job_prepare.output_file: jobs_prepared.csv
+    outs:
+    - path: data/prepared_jobs
+      hash: md5
+      md5: d6bdb78055b494b6282d18d68316b1ff.dir
+      size: 1155557043
+      nfiles: 2
+  candidate_vect_title:
+    cmd: python steps/2_title_vectorize_and_matching/title_vectorize.py data/prepared_candidates
+      data/title_vect_candidates candidate_matching_vect
+    deps:
+    - path: data/prepared_candidates
+      hash: md5
+      md5: 4408cdb5a8027187898640443ae4b496.dir
+      size: 972830706
+      nfiles: 2
+    - path: steps/2_title_vectorize_and_matching
+      hash: md5
+      md5: 43c4b72e1af6d640505fbb63f98a9631.dir
+      size: 37067
+      nfiles: 9
+    - path: steps/2_title_vectorize_and_matching/title_vectorize.py
+      hash: md5
+      md5: 6483db775c98de6f3f1209f04a842eaf
+      size: 2155
+    params:
+      params.yaml:
+        candidate_matching_vect.input_file: candidates_prepared.csv
+        general_matching_vect.output_emb_file: emb_index_{lang}.index
+        general_matching_vect.output_id_file: emb_id_map_{lang}.json
+        general_matching_vect.vectorize_column: Position
+    outs:
+    - path: data/title_vect_candidates
+      hash: md5
+      md5: 4cda559cd98b4f54a295dda9531ae362.dir
+      size: 975611656
+      nfiles: 4
+  job_vect_title:
+    cmd: python steps/2_title_vectorize_and_matching/title_vectorize.py data/prepared_jobs
+      data/title_vect_jobs job_matching_vect
+    deps:
+    - path: data/prepared_jobs
+      hash: md5
+      md5: d6bdb78055b494b6282d18d68316b1ff.dir
+      size: 1155557043
+      nfiles: 2
+    - path: steps/2_title_vectorize_and_matching
+      hash: md5
+      md5: 43c4b72e1af6d640505fbb63f98a9631.dir
+      size: 37067
+      nfiles: 9
+    - path: steps/2_title_vectorize_and_matching/title_vectorize.py
+      hash: md5
+      md5: 6483db775c98de6f3f1209f04a842eaf
+      size: 2155
+    params:
+      params.yaml:
+        general_matching_vect.output_emb_file: emb_index_{lang}.index
+        general_matching_vect.output_id_file: emb_id_map_{lang}.json
+        general_matching_vect.vectorize_column: Position
+        job_matching_vect.input_file: jobs_prepared.csv
+    outs:
+    - path: data/title_vect_jobs
+      hash: md5
+      md5: 84f9ff0b18ff22875084699462ea3bc0.dir
+      size: 703363631
+      nfiles: 4
+  groups_matching:
+    cmd: python steps/2_title_vectorize_and_matching/groups_matching.py data/prepared_candidates
+      data/prepared_jobs data/raw_groups
+    deps:
+    - path: data/prepared_candidates
+      hash: md5
+      md5: 4408cdb5a8027187898640443ae4b496.dir
+      size: 972830706
+      nfiles: 2
+    - path: data/prepared_jobs
+      hash: md5
+      md5: d6bdb78055b494b6282d18d68316b1ff.dir
+      size: 1155557043
+      nfiles: 2
+    - path: steps/2_title_vectorize_and_matching
+      hash: md5
+      md5: b61f3219f5d3f76227e3e652f19f8b30.dir
+      size: 44801
+      nfiles: 10
+    - path: steps/2_title_vectorize_and_matching/groups_matching.py
+      hash: md5
+      md5: 5949abe9d770e2797eb30803a95c17b2
+      size: 1527
+    params:
+      params.yaml:
+        groups_matching.input_candidates: candidates_prepared.csv
+        groups_matching.input_jobs: jobs_prepared.csv
+        groups_matching.output_file: groups.json
+    outs:
+    - path: data/raw_groups
+      hash: md5
+      md5: d9f1cb123315487943a4cff9f5116723.dir
+      size: 715302628
+      nfiles: 1
+  groups_matching_final:
+    cmd: python steps/2_title_vectorize_and_matching/final_matching.py data/prepared_candidates
+      data/raw_groups data/title_vect_jobs data/title_vect_candidates data/final_groups
+    deps:
+    - path: data/prepared_candidates
+      hash: md5
+      md5: 4408cdb5a8027187898640443ae4b496.dir
+      size: 972830706
+      nfiles: 2
+    - path: data/title_vect_candidates
+      hash: md5
+      md5: 4cda559cd98b4f54a295dda9531ae362.dir
+      size: 975611656
+      nfiles: 4
+    - path: data/title_vect_jobs
+      hash: md5
+      md5: 84f9ff0b18ff22875084699462ea3bc0.dir
+      size: 703363631
+      nfiles: 4
+    - path: steps/2_title_vectorize_and_matching
+      hash: md5
+      md5: b61f3219f5d3f76227e3e652f19f8b30.dir
+      size: 44801
+      nfiles: 10
+    - path: steps/2_title_vectorize_and_matching/final_matching.py
+      hash: md5
+      md5: 2b96447c33997e1c5c292f4df5a2a267
+      size: 2014
+    params:
+      params.yaml:
+        groups_matching_final.input_file: candidates_prepared.csv
+        groups_matching_final.output_file: groups.json
+        vec_dim: 1024
+    outs:
+    - path: data/final_groups
+      hash: md5
+      md5: 51f59ea9d737b69de3adde3796da6959.dir
+      size: 697341552
+      nfiles: 1
