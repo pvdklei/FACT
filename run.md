@@ -47,9 +47,23 @@ Somewhere in the notebook, you'll get an error when it's trying to find some emb
 
 So we gotta use this Sentence Embeddings ALL-MINILM-L6-V2 model I guess. 
 
+you can use it from huggingface:
+
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+But this is just a small appendix thing which is only references once in the paper, so maybe not super important.
+
+## `doordash_df` in final_figures.ipynb
+
+They reference some `doordash_df` dataframe that is not defined anywhere. Is this just `melted_df`? Don't think so, still getting key errors after changing that.
+
 ## Wrong filenames in consistency_checks.ipynb and significance_tests.ipynb
 
 In these notebooks they look for `../Figure1_100Samples/Scores/doordash_job_description.csv` but the correct filename is `doordash_job_description_prev.csv`. Same for the google ux file.
+
+## Data fiksen
+
+De hele dataset kan je vanuit de `recruitment-dataset` repo halen met DVC. Zie de instructies in de `README.md` van die repo. Hiervoor moet je wel je python versie van 3.10 (uit die `llm-hiring-ecosystem/env.yml` file) naar 3.11 upgraden, want DVC ondersteunt geen 3.10 meer.
 
 
 
