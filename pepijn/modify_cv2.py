@@ -33,6 +33,10 @@ GEMINI_MODEL_CONFIGS = {
         'temperature': 0.7,
         'description': 'Preview of upcoming Gemini 3 Pro model'
     },
+    'gemini-2.0-flash-lite': {
+        'temperature': 0.7,
+        'description': 'Cost-effective model for lighter workloads'
+    },
 }
 
 def format_message_json(prompt_template: List, input_cv: str, job_desc: str = '') -> List[dict]:
