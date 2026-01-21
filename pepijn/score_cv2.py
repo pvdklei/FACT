@@ -8,6 +8,9 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 
+import os
+from typing import Literal
+
 DEFAULT_MODEL = "anass1209/resume-job-matcher-all-MiniLM-L6-v2"
 
 
@@ -152,3 +155,67 @@ def score_cvs_multi_jobs_original(
         client.delete_collection(collection_name="demo_collection")
 
     return out
+
+def score_all(
+    cv_folder_path: str, # Path to folder with CV's
+    score_folder_path: str, # Path to folder to save scores
+    job_descriptions: Sequence[str],
+    job_names: Sequence[str],
+    *,
+    dry_run: bool = False,
+    verbose: bool = True,
+    scorer: Literal["resume-job-matcher-all-MiniLM-L6-v2"] = "resume-job-matcher-all-MiniLM-L6-v2",
+):
+    """
+    Will look into the CV folder and score folder, and
+    for every file in the CV folder that doesnt have a corresponding
+    score file in the score folder, it will score it and save it.
+    """
+
+    missing_filenames = []
+
+    for filename in os.listdir(cv_folder_path):
+        if not filename.endswith(".csv"):
+            continue
+        if not os.path.exists(os.path.join(score_folder_path, filename)):
+            missing_filenames.append(filename)
+
+    if dry_run:
+        print(f"Missing {len(missing_filenames)} files:")
+        for fn in missing_filenames:
+            print(f" - {fn}")
+
+        # Test if all tables have one column or a column with "CV" in it.
+        for filename in missing_filenames:
+            df = pd.read_csv(os.path.join(cv_folder_path, filename), index_col=0)
+            if df.shape[1] != 1 and not any("cv" in col.lower() for col in df.columns):
+                print(f"WARNING: File {filename} does not have exactly one column or a column with 'CV' in it.")
+
+        return
+    
+    if verbose:
+        print(f"Scoring {len(missing_filenames)} files...")
+
+    for idx, filename in enumerate(missing_filenames):
+        if verbose:
+            print(f"Scoring file {idx + 1}/{len(missing_filenames)}: {filename}")
+
+        df = pd.read_csv(os.path.join(cv_folder_path, filename), index_col=0)
+
+        if scorer == "resume-job-matcher-all-MiniLM-L6-v2":
+            scored_df = score_cvs_multi_jobs_df(
+                cv_s_dataframe=df,
+                job_descriptions=job_descriptions,
+                job_names=job_names,
+                verbose=verbose,
+            )
+        else:
+            raise ValueError(f"Unknown scorer: {scorer}")
+        
+        if not os.path.exists(score_folder_path):
+            os.makedirs(score_folder_path)
+        
+        scored_df.to_csv(os.path.join(score_folder_path, filename))
+    
+
+
