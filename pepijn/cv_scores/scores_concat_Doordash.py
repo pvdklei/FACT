@@ -9,26 +9,38 @@ manipulate_path = base / "llm-hiring-ecosystem/Table1_Experimental_Modified_Resu
 original_scores = pd.read_csv(models_path/"original_cvs.csv")
 gemini_flash = pd.read_csv(models_path/"gemini_flash_doordash_pm.csv")
 gemini_pro = pd.read_csv(models_path/"gemini_pro_doordash_pm.csv")
+gemini_flash_lite = pd.read_csv(models_path/"gemini_flash_lite_doordash_pm.csv")
 haiku = pd.read_csv(models_path/"haiku_doordash_pm.csv")
 opus = pd.read_csv(models_path/"opus_doordash_pm.csv")
 sonnet = pd.read_csv(models_path / "sonnet_doordash_pm.csv")
 haiku_opus = pd.read_csv(models_path / "twice_haiku_opus_doordash_pm.csv")
 sonnet_opus = pd.read_csv(models_path / "twice_sonnet_opus_doordash_pm.csv")
 twice_opus = pd.read_csv(models_path / "twice_opus_doordash_pm.csv")
+twice_gemini_flash = pd.read_csv(models_path / "twice_gemini_flash_doordash_pm.csv")
+twice_gemini_pro = pd.read_csv(models_path / "twice_gemini_pro_doordash_pm.csv")
+twice_gemini_flash_lite = pd.read_csv(models_path / "twice_gemini_flash_lite_doordash_pm.csv")
+twice_gemini_flash_pro = pd.read_csv(models_path / "twice_gemini_flash_pro_doordash_pm.csv")
+twice_gemini_flash_lite_pro = pd.read_csv(models_path / "twice_gemini_flash_lite_pro_doordash_pm.csv")
 
-assert len(gemini_flash) == len(gemini_pro) == len(haiku) == len(opus) == len(sonnet) == len(haiku_opus) == len(sonnet_opus) == len(twice_opus), \
+assert len(gemini_flash) == len(gemini_pro) == len(gemini_flash_lite) == len(haiku) == len(opus) == len(sonnet) == len(haiku_opus) == len(sonnet_opus) == len(twice_opus) == len(twice_gemini_flash) == len(twice_gemini_pro) == len(twice_gemini_flash_lite) == len(twice_gemini_flash_pro) == len(twice_gemini_flash_lite_pro), \
     "Model CSV row counts do not match"
 
 target = pd.concat(
     [original_scores[["CV_doordash_pm_Score"]],
-     gemini_flash[["Modified_gemini-3-flash-preview_of_CV_Modelgemini-3-flash-preview_doordash_pm_Score"]], 
-     gemini_pro[["Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score"]], 
+     gemini_flash[["Modified_gemini-3-flash-preview_of_CV_Modelgemini-3-flash-preview_doordash_pm_Score"]].rename(columns={"Modified_gemini-3-flash-preview_of_CV_Modelgemini-3-flash-preview_doordash_pm_Score": "gemini_flash_doordash_pm_Score"}), 
+     gemini_pro[["Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score"]].rename(columns={"Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score": "gemini_pro_doordash_pm_Score"}), 
+     gemini_flash_lite[["Modified_gemini-2.0-flash-lite_of_CV_Modelgemini-2.0-flash-lite_doordash_pm_Score"]].rename(columns={"Modified_gemini-2.0-flash-lite_of_CV_Modelgemini-2.0-flash-lite_doordash_pm_Score": "gemini_flash_lite_doordash_pm_Score"}),
      haiku[["Modified_claude-haiku-4-5_of_CV_Modelclaude-haiku-4-5_doordash_pm_Score"]], 
      opus[["Modified_claude-opus-4-5_of_CV_Modelclaude-opus-4-5_doordash_pm_Score"]], 
      sonnet[["Modified_claude-sonnet-4-5_of_CV_Modelclaude-sonnet-4-5_doordash_pm_Score"]],
      haiku_opus[["Modified_claude-opus-4-5_of_Modified_claude-haiku-4-5_of_CV_Modelclaude-haiku-4-5_Modelclaude-opus-4-5_doordash_pm_Score"]],
      sonnet_opus[["Modified_claude-opus-4-5_of_Modified_claude-sonnet-4-5_of_CV_Modelclaude-sonnet-4-5_Modelclaude-opus-4-5_doordash_pm_Score"]],
-     twice_opus[["Modified_claude-opus-4-5_of_Modified_claude-opus-4-5_of_CV_Modelclaude-opus-4-5_Modelclaude-opus-4-5_doordash_pm_Score"]]],
+     twice_opus[["Modified_claude-opus-4-5_of_Modified_claude-opus-4-5_of_CV_Modelclaude-opus-4-5_Modelclaude-opus-4-5_doordash_pm_Score"]],
+     twice_gemini_flash[["Modified_gemini-3-flash-preview_of_CV_Modelgemini-3-flash-preview_doordash_pm_Score"]].rename(columns={"Modified_gemini-3-flash-preview_of_CV_Modelgemini-3-flash-preview_doordash_pm_Score": "twice_gemini_flash_doordash_pm_Score"}),
+     twice_gemini_pro[["Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score"]].rename(columns={"Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score": "twice_gemini_pro_doordash_pm_Score"}),
+     twice_gemini_flash_lite[["Modified_gemini-2.0-flash-lite_of_CV_Modelgemini-2.0-flash-lite_doordash_pm_Score"]].rename(columns={"Modified_gemini-2.0-flash-lite_of_CV_Modelgemini-2.0-flash-lite_doordash_pm_Score": "twice_gemini_flash_lite_doordash_pm_Score"}),
+     twice_gemini_flash_pro[["Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score"]].rename(columns={"Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score": "twice_gemini_flash_pro_doordash_pm_Score"}),
+     twice_gemini_flash_lite_pro[["Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score"]].rename(columns={"Modified_gemini-3-pro-preview_of_CV_Modelgemini-3-pro-preview_doordash_pm_Score": "twice_gemini_flash_lite_pro_doordash_pm_Score"})],
     axis=1
 )
 
