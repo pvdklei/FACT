@@ -33,6 +33,10 @@ GEMINI_MODEL_CONFIGS = {
         'temperature': 0.7,
         'description': 'Preview of upcoming Gemini 3 Pro model'
     },
+    'gemini-2.0-flash-lite': {
+        'temperature': 0.7,
+        'description': 'Cost-effective model for lighter workloads'
+    },
 }
 
 def format_message_json(prompt_template: List, input_cv: str, job_desc: str = '') -> List[dict]:
@@ -285,7 +289,7 @@ class GeminiClient:
 
         return batch_job_name
 
-    def get_batch_results(self, batch_id: str, cv_s_dataframe: pd.DataFrame) -> pd.DataFrame:
+    def get_batch_results(self, batch_id: str, cv_s_dataframe: pd.DataFrame, nsm=[]) -> pd.DataFrame:
         """
         Retrieve results from a completed batch job.
         Expects the original DataFrame used to start the batch job to map results correctly.
@@ -344,6 +348,9 @@ class GeminiClient:
                     if content_parts:
                         content = content_parts[0].get("text", "")
 
+                if not content:
+                    nsm.append(json_record)
+
                 results[custom_id_no] = content if content else "not_successfully_modified"
 
         # Handle inline results
@@ -360,6 +367,9 @@ class GeminiClient:
 
                 if inline_response.response:
                     content = inline_response.response.text
+
+                if not content:
+                    nsm.append(batch_request)
 
                 results[custom_id_no] = content if content else "not_successfully_modified"
 
