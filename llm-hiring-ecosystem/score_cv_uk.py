@@ -52,7 +52,7 @@ def get_score(input_resume: str, job_description: str, verbose: bool = False) ->
     documents: List[str] = [input_resume]
     client = QdrantClient(path="./local_model")
     # Old code is client.set_model("BAAI/bge-base-en")
-    client.set_model("BAAI/bge-m15")  # Multilingual, supports Ukrainian
+    client.set_model("intfloat/multilingual-e5-large")  # Multilingual, supports Ukrainian
 
     if client.get_collections().collections:
         client.delete_collection(collection_name="demo_collection")
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     args=parse_args()
     
     input_job_name = args.job_name if args.job_name else c.doordash_pm_job_name
-    input_job_desc = open(args.job_description, 'r', , encoding='utf-8').read() if args.job_description else c.doordash_pm_job_desc
+    input_job_desc = open(args.job_description, 'r', encoding='utf-8').read() if args.job_description else c.doordash_pm_job_desc
 
     resumes = args.resumes
     if args.resume_folder is not None:
