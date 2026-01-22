@@ -14,7 +14,6 @@ target_full = pd.read_csv(target_format_path)
 print(f"Target file shape: {target_full.shape}")
 
 # Map each file to its target column name matching GoogleUX_Scores.csv format
-# The mapping is based on the actual column names in source files to target format
 column_map = {
     "ScoresGoogle_Original_File_twicegpt4o.csv": "Twice GPT-4o Google_UX Score",
     "ScoresGoogle_Original_File_gpt4o_once.csv": "Cleaned GPT-4o Conversation-Improved CVGoogle_UX Score",
@@ -25,7 +24,6 @@ column_map = {
     "ScoresGoogle_Original_File_chat4omini_once.csv": "Modified GPT-4o-mini Google_UX Score",
 }
 
-
 # Read and combine all score files
 score_dfs = []
 for fname, target_col in column_map.items():
@@ -35,7 +33,6 @@ for fname, target_col in column_map.items():
         df = pd.read_csv(file_path)
         
         # Get the score column (usually the second column, or first if only one)
-        # Skip the first column if it's 'index' or empty
         if len(df.columns) > 1:
             score_col = df.columns[1]
         else:
@@ -43,11 +40,6 @@ for fname, target_col in column_map.items():
         
         # Extract just the score values
         scores = df[score_col].values
-        # Handle case where index starts at 1 instead of 0
-        if len(scores) == len(df) - 1 and df.index[0] == 1:
-            # Need to align - the CSV might have index starting at 1
-            scores = df[score_col].values
-        
         score_dfs.append(pd.DataFrame({target_col: scores}))
         print(f"  Extracted {len(scores)} scores")
     else:
@@ -55,12 +47,7 @@ for fname, target_col in column_map.items():
 
 # Combine all score columns
 print("\nCombining scores...")
-if score_dfs:
-    combined_scores = pd.concat(score_dfs, axis=1)
-    # Remove any duplicate columns (in case of duplicate mappings)
-    combined_scores = combined_scores.loc[:, ~combined_scores.columns.duplicated()]
-else:
-    combined_scores = pd.DataFrame()
+combined_scores = pd.concat(score_dfs, axis=1)
 
 # Get number of rows
 n_rows = len(combined_scores)
@@ -70,15 +57,14 @@ target_df = pd.read_csv(target_format_path, nrows=0)
 target_columns = target_df.columns.tolist()
 print(f"Target columns: {target_columns}")
 
-# Create the final dataframe with empty first column and index
+# Create the final dataframe with empty first column
 # Target format has: empty column, then score columns, then UX True Label, then Will Manipulate
-# Create dataframe with proper index length
 final_df = pd.DataFrame(index=range(n_rows))
 final_df.insert(0, '', '')  # Add empty first column
 
 # Add score columns in the order they appear in target format
 for col in target_columns:
-    if col in ['', 'UX True Label', 'Will Manipulate']:
+    if col in ['', 'UX True Label', 'Will Manipulate', 'Unnamed: 0']:
         continue  # Skip these, we'll add them separately
     if col in combined_scores.columns:
         final_df[col] = combined_scores[col].values
@@ -108,7 +94,7 @@ ordered_columns = ['']  # Start with empty column
 
 # Add score columns in target order
 for col in target_columns:
-    if col in ['', 'UX True Label', 'Will Manipulate']:
+    if col in ['', 'UX True Label', 'Will Manipulate', 'Unnamed: 0']:
         continue
     if col in final_df.columns and col not in ordered_columns:
         ordered_columns.append(col)
