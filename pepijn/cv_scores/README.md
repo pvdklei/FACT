@@ -1,0 +1,3 @@
+Dit zijn alle scores die zijn gegeven aan elke cv of modified cv, voor alle job descriptions. 
+
+Dus bijvoorbeeld `sonnet_doordash_pm.csv` bevat de scores voor de cv's die zijn aangepast met het Sonnet model, op basis van de DoorDash Product Manager job description. Deze tabel bevat wel meerdere score kolommen, namelijk de scores voor alle job descriptions die we hebben. Ik neem aan dat we alleen de score voor de specifieke job description nodig hebben, dus in dit geval pak je de kolom voor de DoorDash PM job description.
