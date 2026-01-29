@@ -16,6 +16,41 @@ Example Usage:
 python3 modify_cv.py test_cvs.csv test_folder --prompt-template test_template.txt --prompt-job-description scalable_job_description.txt --provider openai --api-key llm_api_keys.yaml 
 python3 modify_cv.py jan_samples.csv jan_folder --prompt-template jan_prompt.txt --provider openai --model gpt-3.5-turbo --api-key llm_api_keys.yaml 
   
+models
+mistralai/mixtral-8x7b-instruct
+meta-llama/llama-3.3-70b-instruct:free
+deepseek/deepseek-chat
+openai/gpt-4o-mini
+openai/gpt-3.5-turbo
+openai/gpt-4o
+
+sample_input_data/reproduce_cv/pm_first_260_onecol.csv
+sample_input_data/reproduce_cv/uiux_first_260_onecol.csv
+
+UK_data/pm_UK_onecol.csv
+UK_data/uiux_UK_onecol.csv
+UK_data/prompt_uk.txt
+
+UK_data/google_ux_uk.txt
+UK_data/doordash_pm_uk.txt
+
+python modify_cv.py /Users/nicky/Desktop/FACT/pepijn/modified_cvs/sonnet_doordash_pm.csv\
+    /Users/nicky/Desktop/FACT/Nicky/Modified_per_job/GPT-5.2-Claude\
+    --prompt-template sample_input_data/example_prompts/anti_hallucination_llm_prompt.txt \
+    --prompt-job-description sample_input_data/example_job_descriptions/PM_job_descriptions/doordash_pm.txt\
+    --provider openai\
+    --model gpt-5.2\
+    --api-key api_keys.yaml 
+
+python modify_cv.py /Users/nicky/Desktop/FACT/Nicky/Modified_per_job/gpt-4o/gpt-4o-UI2.csv\
+      /Users/nicky/Desktop/FACT/Nicky/Modified_per_job/gpt-4o\
+      --prompt-template sample_input_data/example_prompts/anti_hallucination_llm_prompt.txt\
+      --prompt-job-description sample_input_data/example_job_descriptions/PM_job_descriptions/doordash_pm.txt\
+      --provider openrouter\
+      --model gpt-4o\
+      --api-key api_keys.yaml 
+
+
 Example Input Files can be found in sample_input_data.
 """
 #Change generate_resume_messages -> format files that this code can take as an input. 
@@ -262,13 +297,26 @@ class OpenAIClient:
         output = response.choices[0].message.content
         return output
     
-    def __create_batch_file_input(self, cv_s_dataframe: pd.DataFrame, to_be_modified_col: str = 'CV'):
+    def __create_batch_file_input(self, cv_s_dataframe: pd.DataFrame, to_be_modified_col: str = 'CV',
+                                  id_col: str = "id"   # <--- NEW
+                                  ):
+        # new function to chekc for errors 
+        if id_col not in cv_s_dataframe.columns:
+            raise ValueError(
+                f"Expected unique id column '{id_col}' in dataframe. "
+                f"Available columns: {list(cv_s_dataframe.columns)}"
+            )
+        if not cv_s_dataframe[id_col].is_unique:
+            raise ValueError(f"Column '{id_col}' must be unique for batch mapping.")
+
         #Private Method: from the inputs of an input-cv, first combines the CVs with prompt data to generate LLM API messages, then formats it into json-L file that can be passed as inputs into the OpenAI API.
-        original_cv_s = list(cv_s_dataframe[to_be_modified_col])
+        #original_cv_s = list(cv_s_dataframe[to_be_modified_col])
         batch_inputs = []
 
         for index, row in cv_s_dataframe.iterrows():
-            batch_inputs.append({"custom_id":f"resume-request-{str(index)}",
+            uid = str(row[id_col]) # <--- NEW
+            batch_inputs.append({#"custom_id":f"resume-request-{str(index)}",
+                                 "custom_id": f"resume-request-{uid}",  # <--- NEW
                                  'method':"POST",
                                  'url': "/v1/chat/completions",
                                  'body':{'model':self.model, 'messages':self.format_messages(input_cv = row[to_be_modified_col])}})
@@ -279,10 +327,15 @@ class OpenAIClient:
                 f.write(json.dumps(item) + "\n")
         return formatted_inputs_file_name 
     
-    def __send_group_of_cv_s_batch(self, cv_s_dataframe: pd.DataFrame, to_be_modified_col: str = 'CV'):
+    def __send_group_of_cv_s_batch(self, cv_s_dataframe: pd.DataFrame, to_be_modified_col: str = 'CV',
+                                   id_col: str = "id" # <--- NEW
+                                   ):
         #Private Method: creates input jsonL file from input cvs, and creates a corresponding batch object.
 
-        batch_input_file_name = self.__create_batch_file_input(cv_s_dataframe=cv_s_dataframe, to_be_modified_col=to_be_modified_col)
+        batch_input_file_name = self.__create_batch_file_input(cv_s_dataframe=cv_s_dataframe, 
+                                                               to_be_modified_col=to_be_modified_col,
+                                                               id_col=id_col, # <--- NEW
+                                                               )
         
         batch_input_file = self.client.files.create(file=open(batch_input_file_name, "rb"),purpose="batch")
         batch_input_file_id = batch_input_file.id
@@ -320,15 +373,20 @@ class OpenAIClient:
         self.batch_id = None
         return 
         
-    def __generate_group_of_cv_s_batch(self, cv_s_dataframe: pd.DataFrame):
+    def __generate_group_of_cv_s_batch(self, cv_s_dataframe: pd.DataFrame, id_col: str = "id"):
         #Private Method - generates modified CVs from dataframe of inputted CVs with BATCH processing.
 
         if len(cv_s_dataframe.columns)>1:
             raise Exception("More than one column of resumes inputted. Please reformt input to only contain one column")
         
+
+        # look at this
         to_be_modified_col = cv_s_dataframe.columns[-1]
 
-        self.__send_group_of_cv_s_batch(cv_s_dataframe=cv_s_dataframe, to_be_modified_col=to_be_modified_col)
+        self.__send_group_of_cv_s_batch(cv_s_dataframe=cv_s_dataframe, 
+                                        to_be_modified_col=to_be_modified_col,
+                                        id_col=id_col # <--- NEW
+                                        )
 
         if self.batch_id is None:
             raise Exception("There is no batch id - either this job has been previously cancelled or something is wrong.") 
@@ -349,21 +407,29 @@ class OpenAIClient:
 
             json_data = output_file_response.content.decode('utf-8')
 
+            outputs_by_id = {}  # <--- KEY FIX
+
             #Filter output results by if succeeded (if so, append to results), otherwise, keep the placeholder of not_succeeded.
             output_resumes = ['not_successfully_modified' for i in range(len(cv_s_dataframe))]
             # Open the specified file in write mode
             for line in json_data.splitlines():
                 # Parse the JSON record (line) to validate it
                 json_record = json.loads(line)
+
+                custom_id = json_record.get("custom_id", "")
+                uid = custom_id.split("resume-request-")[-1]  # keep as STRING
                 
-                current_output = ''
+                
                 # Extract and print the custom_id
-                custom_id = json_record.get("custom_id")
-                custom_id_no = custom_id.split("-")[-1]
+                #custom_id = json_record.get("custom_id")
+                #custom_id_no = custom_id.split("-")[-1]
                 
                 # Navigate to the 'choices' key within the 'response' -> 'body'
                 choices = json_record.get("response", {}).get("body", {}).get("choices", [])
                 
+                current_output = ''
+
+
                 # Loop through the choices to find messages with the 'assistant' role
                 for choice in choices:
                     message = choice.get("message", {})
@@ -371,7 +437,8 @@ class OpenAIClient:
                         assistant_content = message.get("content")
                         current_output+=f"\n {assistant_content}\n"
                                          
-                output_resumes[int(custom_id_no)] = current_output
+                #output_resumes[int(custom_id_no)] = current_output
+                outputs_by_id[uid] = current_output
 
             #Save outputted results to a dataframe of the modified resumes.
             to_be_modified_col = cv_s_dataframe.columns[-1]
@@ -402,6 +469,7 @@ class OpenAIClient:
         return cv_s_dataframe[[modified_col_name]]
     
     def generate_group_of_cv_s(self, cv_s_dataframe: pd.DataFrame):
+        return self.__generate_group_of_cv_s_from_individual_calls(cv_s_dataframe)
         #Wrappper function that generates group of cv-s with either individual requests to LLM API (if size small enough) or batch requests to LLM API.
         if len(cv_s_dataframe)<=openai_individual_batch_threshold:
             return self.__generate_group_of_cv_s_from_individual_calls(cv_s_dataframe)
@@ -573,13 +641,64 @@ class OpenRouterClient:
             input_cv=input_cv,
             job_desc=self.prompt_job_description,
         )
-
+    
+    #new function
+    '''
     def __client_api_call_function(self, messages) -> str:
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=0,
+            timeout=60.0,
         )
+
+        # Guardrails: OpenRouter can return payloads without choices (errors, etc.)
+        if resp is None:
+            raise RuntimeError("OpenRouter returned None (no response object).")
+
+        choices = getattr(resp, "choices", None)
+        if not choices:
+            # This makes debugging 10x easier than a NoneType crash:
+            try:
+                debug = resp.model_dump()
+            except Exception:
+                debug = str(resp)
+            raise RuntimeError(f"OpenRouter returned no choices. Response was:\n{debug}")
+
+        msg = choices[0].message
+        content = getattr(msg, "content", None)
+
+        if content is None or content.strip() == "":
+            # Sometimes you can get tool_calls / empty content
+            try:
+                debug = msg.model_dump()
+            except Exception:
+                debug = str(msg)
+            raise RuntimeError(f"OpenRouter returned empty message content. Message was:\n{debug}")
+
+        return content
+    
+    '''
+    def __client_api_call_function(self, messages) -> str:
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0,
+            #timeout=60.0,
+        )
+        if resp.choices is None:
+            print("OpenRouter returned no choices.", resp)
+            time.sleep(10)
+            resp = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0,
+                #timeout=60.0,
+            )
+            if resp.choices is None:
+                print("OpenRouter returned no choices again.", resp)
+                raise RuntimeError("OpenRouter returned no choices after retry.")
+
         return resp.choices[0].message.content
 
     def __generate_individual_cv(self, input_cv: str) -> str:
@@ -588,7 +707,7 @@ class OpenRouterClient:
         self.num_generated += 1
         print(f"Generated {self.num_generated} resume.")
         return output
-
+    
     def __generate_group_of_cv_s_from_individual_calls(self, cv_s_dataframe: pd.DataFrame):
         if len(cv_s_dataframe.columns) > 1:
             raise Exception("More than one column of resumes inputted. Please reformat input to only contain one column")
@@ -602,7 +721,7 @@ class OpenRouterClient:
                 generated_cvs.append(self.__generate_individual_cv(input_cv=str(cv)))
             except Exception as e:
                 # Save partial progress AND surface the real error
-                pd.DataFrame({modified_col_name: generated_cvs}).to_csv(f"saved_generations_step_{i}.csv")
+                pd.DataFrame({modified_col_name: generated_cvs}, index=cv_s_dataframe.index[:i]).to_csv(f"saved_generations_step_{i}.csv")
                 raise
 
         cv_s_dataframe[modified_col_name] = generated_cvs
@@ -775,10 +894,15 @@ if __name__ == "__main__":
             if not os.path.isdir(path):
                 Path(path).mkdir(parents=True, exist_ok=True)
 
+
+        # Read only first 10 resumes
+        df = pd.read_csv(str(resume_path), index_col=0).head(10)
+
         #Generate and save modified resumes.
         modified_resumes = client.generate_group_of_cv_s(cv_s_dataframe=pd.read_csv(str(resume_path), index_col=0))
         timestamp = datetime.now()
         timestamp_str = timestamp.strftime('%Y-%m-%d_%H-%M')
+
 
         new_file_name = f"file_{timestamp_str}.csv"
         if modified_resumes is not None:

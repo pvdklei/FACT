@@ -10,7 +10,25 @@ Running score_cv takes the following three inputs - and outputs the scores of th
 # Example Input
 # make a folder score_resumes where you put the resumes you want to score
 # python3 score_cv.py --resume-folder score_resumes --job-name DD_PM --job-description doordash_pm.txt --output-dir test_folder
+# python score_cv.py --resumes sample_input_data/example_input_cvs/three_example_cvs.csv --output-dir sample_input_data/example_output_data --job-description sample_input_data/example_job_descriptions/PM_job_descriptions/doordash_pm.txt --job-name DoorDash
 
+UK_data/doordash_pm_uk.txt
+UK_data/prompt_uk.txt
+UK_data/google_ux_uk.txt
+
+sample_input_data/example_job_descriptions/UX_job_descriptions/google_ux.txt
+
+# python score_cv.py \
+  --resumes /Users/nicky/Desktop/FACT/Nicky/Modified_per_job/GPT-5.2-Claude/input_cvs_/Users/nicky/Desktop/FACT/pepijn/modified_cvs/sonnet_doordash_pm/gpt5.2-onclaude.csv \
+  --output-dir /Users/nicky/Desktop/FACT \
+  --job-description sample_input_data/example_job_descriptions/UX_job_descriptions/google_ux.txt \
+  --job-name "UIUX"
+
+python score_cv.py \
+  --resumes /Users/nicky/Desktop/FACT/Nicky/Modified_per_job/GPT-5.2-Claude/input_cvs_/Users/nicky/Desktop/FACT/pepijn/modified_cvs/sonnet_doordash_pm/gpt5.2-onclaude.csv \
+  --output-dir /Users/nicky/Desktop/FACT/Nicky/Scored_520 \
+  --job-description "sample_input_data/example_job_descriptions/PM_job_descriptions/doordash_pm.txt" \
+  --job-name "DoorDash"
 '''
 import os
 
@@ -24,6 +42,8 @@ from tqdm import tqdm
 tqdm.pandas()
 
 NUM_RESUMES_SCORED = 0
+
+from codecarbon import EmissionsTracker
 
 #Generate word similarity score for one pair: (job description & resume). Code from: https://github.com/srbhr/Resume-Matcher/blob/main/scripts/similarity/get_score.py
 def get_score(input_resume: str, job_description: str, verbose: bool = False) -> float:
@@ -128,6 +148,8 @@ def parse_args() -> argparse.Namespace:
     return args
 
 if __name__ == "__main__":
+    tracker = EmissionsTracker(project_name="score_cv")
+    tracker.start()
     args=parse_args()
     
     input_job_name = args.job_name if args.job_name else c.doordash_pm_job_name
@@ -162,3 +184,6 @@ if __name__ == "__main__":
             new_file_name = new_file_name.replace("/", "_").replace(" ", "_")
 
         final_df.to_csv(str(args.output_dir)+"/"+new_file_name)
+
+    emissions_kg = tracker.stop()
+    print(f"Emissions: {emissions_kg:.6f} kg CO2e")
